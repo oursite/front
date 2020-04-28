@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>delivery</title>
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <style type="text/css">
+    .s{color: #d44950;}
+    .pl55{padding-left:55px;}
+    .pt15{padding-top:15px;}
+    .pb15{padding-bottom:15px;}
+    .mt10{margin-top:10px;}
+    .fl{float: left;}
+  </style>
+</head>
+<body>
+<div class="container-fluid pt15 pb15">
+
+<ul class="list-group orderList">
+  <li class="list-group-item">
+    <p>Cras justo odio</p>
+    <div class="btn-group" role="group">
+      <button type="button" class="btn btn-default">接单</button>
+      <button type="button" class="btn btn-default">完成</button>
+    </div>
+  </li>
+</ul>
+
+
+<div id="login" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="loginLabel">
+  <div class="modal-dialog" role="document" aria-hidden="false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+        <h4 class="modal-title">Login</h4>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <span class="input-group-addon" id="basic-addon1">账号</span>
+          <input type="text" class="form-control account" placeholder="账号" aria-describedby="basic-addon1" value="121">
+        </div>
+        <span class="s pl55 hide n1">请输入账号</span>
+        <br/>
+        <div class="input-group mt10">
+          <span class="input-group-addon" id="basic-addon1">密码</span>
+          <input type="text" class="form-control password" placeholder="密码" aria-describedby="basic-addon1" value="123">
+        </div>
+
+        <span class="s pl55 hide n2">请输入密码</span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-success submit">提交</button>
+
+        <button type="button" class="btn btn-warning fl hide n3" data-dismiss="alert"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="btn-group btn-group-justified navbar-fixed-bottom" role="group" aria-label="...">
+  <div class="btn-group" role="group"><button type="button" class="btn btn-success btn-lg">Left</button></div>
+  <div class="btn-group" role="group"><button type="button" class="btn btn-default btn-lg">Middle</button></div>
+  <div class="btn-group" role="group"><button type="button" class="btn btn-default btn-lg">Right</button></div>
+</div>
+
+
+</div>
+<script src="/js/jquery.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+  var token = localStorage.token,
+    api='http://os.cn/';
+
+  var ajaxFunc = function(uri,data,sucFunc,errClass){
+    $.ajax({
+      headers:{
+        Token:token
+      },
+      url:api + uri,
+      contentType: "application/json;charset=utf-8",
+      type : "POST",
+      dataType : "json",
+      data : JSON.stringify(data),
+      success:sucFunc,
+      error:function(result){
+        if(typeof(result.status) == 'undefined' || result.statusText == "error") {
+          errInfo(errClass, '网络错误');
+        } else {
+          errInfo(errClass, result.responseJSON.info);
+        }
+      }
+    });
+  }
+  var errInfo = function(className, info){
+    $(className).text(info)
+    showFunc(className);
+  }
+  var setToken = function(result){
+    token = result.data.token;
+    localStorage.token = token;
+    $('#login').modal('hide');
+    order(1);
+  }
+  var showFunc = function(className){$(className).removeClass('hide')}
+  var hideFunc = function(className){$(className).addClass('hide')}
+
+  $('#login .submit').click(function () {
+    var account = $('#login .account').val();
+    if (!account) {
+      showFunc('n1');
+      return;
+    } else {
+      hideFunc('n1');
+    }
+    var password = $('#login .password').val();
+    if (!password) {
+      showFunc('.n2');
+      return;
+    }else{
+      hideFunc('.n2');
+    }
+    var data = {"account":account,"password":password};
+    ajaxFunc("userNew/login", data, setToken, '.n3')
+  })
+
+  /* 订单 */
+  var order = function(page){
+    var data = {"page":page,"page_size":10}
+    ajaxFunc('orderNew/orderList', data, orderList, null)
+  }
+  var orderList = [];
+  var orderList = function(result){
+    orderList = result.data;
+    var listHtml = '';
+    $.each(orderList, function(index, value){
+      listHtml += '<li class="list-group-item">' +
+        '<p>' + value.store_id + '</p>' +
+        '<div class="btn-group" role="group">' +
+        '<button type="button" class="btn btn-default">接单</button>' +
+        '<button type="button" class="btn btn-default">完成</button>' +
+        '</div></li>';
+    });
+    if(listHtml != '') {
+      $('.orderList').html(listHtml);
+    }
+  }
+
+  if (typeof(token) == 'undefined' || token == 'null') {
+    $('#login').modal('show')
+  } else {
+    order(1);
+  }
+
+
+</script>
+</body>
+</html>
